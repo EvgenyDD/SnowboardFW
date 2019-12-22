@@ -1,0 +1,268 @@
+#include "ws2812.h"
+#include "main.h"
+#include "math_const.h"
+#include <math.h>
+#include <stdbool.h>
+
+extern TIM_HandleTypeDef htim1;
+extern DMA_HandleTypeDef hdma_tim1_ch1;
+
+const Color_t black = {0, 0, 0};
+const Color_t red = {255, 0, 0};
+const Color_t green = {0, 255, 0};
+const Color_t blue = {0, 0, 255};
+const Color_t white = {255, 255, 255};
+
+static bool transfer_enabled = false;
+
+#define DELAY_LEN 48
+#define ARRAY_LEN DELAY_LEN + LED_COUNT * 24
+
+#define TIM_COMPARE_HIGH 22
+#define TIM_COMPARE_LOW 8
+
+uint16_t buffer_dma[ARRAY_LEN] = {0};
+Color_t leds[LED_COUNT];
+
+static const uint8_t gamma8[] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2,
+    2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5,
+    5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10,
+    10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
+    17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
+    25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
+    37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
+    51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
+    69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
+    90, 92, 93, 95, 96, 98, 99, 101, 102, 104, 105, 107, 109, 110, 112, 114,
+    115, 117, 119, 120, 122, 124, 126, 127, 129, 131, 133, 135, 137, 138, 140, 142,
+    144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
+    177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213,
+    215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252, 255};
+
+void blend(const uint8_t *in_a, const uint8_t *in_b, uint8_t *out, float amount)
+{
+    float r, g, b;
+
+    r = ((float)in_b[0] * amount) + ((float)in_a[0] * (1.0 - amount));
+    g = ((float)in_b[1] * amount) + ((float)in_a[1] * (1.0 - amount));
+    b = ((float)in_b[2] * amount) + ((float)in_a[2] * (1.0 - amount));
+
+    out[0] = (r > 255.0) ? 255.0 : (r < 0.0) ? 0.0 : r;
+    out[1] = (g > 255.0) ? 255.0 : (g < 0.0) ? 0.0 : g;
+    out[2] = (b > 255.0) ? 255.0 : (b < 0.0) ? 0.0 : b;
+}
+
+/**
+ * @brief Interval hit linear function
+ *          /\
+ *         /  \
+ * ......./    \...... output
+ * 
+ * @param value positive or zero value
+ * @param middle positive value
+ * @param half_sector positive value
+ * @param range positive value
+ * @return float 
+ */
+float interval_hit_dim(int32_t value, int32_t middle, int32_t half_sector, int32_t range)
+{
+    const int32_t max = middle + half_sector;
+    const int32_t min = middle - half_sector;
+
+    if(max >= range)
+    {
+        if(value >= min && value < range)
+            return 1.0f - fabsf((float)(value - middle) / (float)half_sector);
+        else if(value + range < max)
+            return 1.0f - fabsf((float)(value - middle + range) / (float)half_sector);
+        else
+            return 0;
+    }
+    else if(min < 0)
+    {
+        if(value >= 0 && value < max)
+            return 1.0f - fabsf((float)(value - middle) / (float)half_sector);
+        else if(value >= min + range)
+            return 1.0f - fabsf((float)(value - middle - range) / (float)half_sector);
+        else
+            return 0;
+    }
+    else
+    {
+        if(value >= min && value < max)
+            return 1.0f - fabsf((float)(value - middle) / (float)half_sector);
+        else
+            return 0;
+    }
+}
+
+bool interval_hit_bool(int32_t value, int32_t middle, int32_t half_sector, int32_t range)
+{
+    const int32_t max = middle + half_sector;
+    const int32_t min = middle - half_sector;
+
+    if(max >= range)
+    {
+        if(value >= min && value < range)
+            return true;
+        else if(value + range < max)
+            return true;
+        else
+            return false;
+    }
+    else if(min < 0)
+    {
+        if(value >= 0 && value < max)
+            return true;
+        else if(value >= min + range)
+            return true;
+        else
+            return false;
+    }
+    else
+    {
+        if(value >= min && value < max)
+            return true;
+        else
+            return false;
+    }
+}
+
+void ws2812_init(void)
+{
+    memset(buffer_dma, 0, sizeof(buffer_dma));
+    memset(leds, 0, sizeof(leds));
+}
+
+void ws2812_push(void)
+{
+    if(transfer_enabled) return;
+
+    transfer_enabled = true;
+
+    uint32_t iterator = DELAY_LEN;
+    for(uint32_t led = 0; led < LED_COUNT; led++)
+    {
+        // g
+        for(uint32_t i = 0; i < 8; i++)
+        {
+            buffer_dma[iterator++] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+        }
+
+        // r
+        for(uint32_t i = 0; i < 8; i++)
+        {
+            buffer_dma[iterator++] = gamma8[leds[led].color_r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+        }
+
+        // b
+        for(uint32_t i = 0; i < 8; i++)
+        {
+            buffer_dma[iterator++] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+        }
+    }
+    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)&buffer_dma, ARRAY_LEN * 2);
+}
+
+void ws2812_terminate(void)
+{
+    HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
+    TIM1->CCR1 = 0;
+    __HAL_TIM_DISABLE(&htim1);
+    transfer_enabled = false;
+}
+
+void ws2812_clear(void) { memset(leds, 0, sizeof(leds)); }
+
+void ws2812_set_led(uint16_t id, Color_t color)
+{
+    if(id >= LED_COUNT) return;
+    leds[id] = color;
+}
+
+/**
+ * h [0;360]
+ * s [0;1]
+ * v [0;255]
+ */
+Color_t hsv2rgb(float h, float s, float v)
+{
+    float p, q, t, ff;
+    Color_t out;
+
+    float hh = h;
+    if(hh >= 360.0) hh = 0.0;
+    hh /= 60.0;
+    int i = (int)hh;
+    ff = hh - i;
+    p = v * (1.0 - s);
+    q = v * (1.0 - (s * ff));
+    t = v * (1.0 - (s * (1.0 - ff)));
+
+    switch(i)
+    {
+    case 0:
+        out.color_r = v;
+        out.color_g = t;
+        out.color_b = p;
+        break;
+    case 1:
+        out.color_r = q;
+        out.color_g = v;
+        out.color_b = p;
+        break;
+    case 2:
+        out.color_r = p;
+        out.color_g = v;
+        out.color_b = t;
+        break;
+
+    case 3:
+        out.color_r = p;
+        out.color_g = q;
+        out.color_b = v;
+        break;
+    case 4:
+        out.color_r = t;
+        out.color_g = p;
+        out.color_b = v;
+        break;
+    case 5:
+    default:
+        out.color_r = v;
+        out.color_g = p;
+        out.color_b = q;
+        break;
+    }
+    return out;
+}
+
+void ws2812_set_angle(float angle, float w)
+{
+    const float offset = 0;
+
+    float normed = angle + offset;
+    normed = angle_norm(normed);
+
+    static float prev_start = -999;
+    int start = (float)LED_COUNT * normed * ONE_DIV_2PI;
+
+    if(prev_start != start)
+    {
+#define LIGHT_LED_COUNT 25
+        float w_abs = fabsf(w);
+        float w_trunc = w_abs > 120.0f ? 120.0f : w_abs;
+        Color_t light_color = hsv2rgb(240 + w_trunc, 1.0f, 255.0f);
+
+        for(uint32_t i = 0; i < LED_COUNT; i++)
+        {
+            ws2812_set_led(i, interval_hit_bool((int32_t)i, start, LIGHT_LED_COUNT / 2, LED_COUNT)
+                                  ? light_color
+                                  : black);
+        }
+        prev_start = start;
+    }
+}
