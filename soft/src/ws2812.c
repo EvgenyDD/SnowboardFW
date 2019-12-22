@@ -16,12 +16,12 @@ const Color_t white = {255, 255, 255};
 static bool transfer_enabled = false;
 
 #define DELAY_LEN 48
-#define ARRAY_LEN DELAY_LEN + LED_COUNT * 24
+#define ARRAY_LEN 1 + LED_COUNT * 24 + DELAY_LEN
 
 #define TIM_COMPARE_HIGH 22
 #define TIM_COMPARE_LOW 8
 
-uint16_t buffer_dma[ARRAY_LEN] = {0};
+uint16_t buffer_dma[ARRAY_LEN];
 Color_t leds[LED_COUNT];
 
 static const uint8_t gamma8[] = {
@@ -143,7 +143,7 @@ void ws2812_push(void)
 
     transfer_enabled = true;
 
-    uint32_t iterator = DELAY_LEN;
+    uint32_t iterator = 1;
     for(uint32_t led = 0; led < LED_COUNT; led++)
     {
         // g
@@ -164,14 +164,14 @@ void ws2812_push(void)
             buffer_dma[iterator++] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
         }
     }
-    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)&buffer_dma, ARRAY_LEN * 2);
+    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)&buffer_dma, ARRAY_LEN);
 }
 
 void ws2812_terminate(void)
 {
     HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
-    TIM1->CCR1 = 0;
-    __HAL_TIM_DISABLE(&htim1);
+    // TIM1->CCR1 = 0;
+    // __HAL_TIM_DISABLE(&htim1);
     transfer_enabled = false;
 }
 

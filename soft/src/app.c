@@ -170,7 +170,7 @@ void loop(void)
             phys_engine_poll(ts, angle);
 
             ws2812_set_angle(phys_engine_get_angle(),
-                             phys_engine_get_w() * 40.0f);
+                             phys_engine_get_w() * 20.0f);
         }
     }
 
@@ -183,7 +183,7 @@ void loop(void)
     // if(cnt < HAL_GetTick())
     if(0)
     {
-        cnt = HAL_GetTick() + 8;
+        cnt = HAL_GetTick() + 5;
 
         color_ring += 0.2;
         if(color_ring >= 360) color_ring = 0;
@@ -199,7 +199,6 @@ void loop(void)
         ws2812_set_led(ptr, hsv2rgb(color_ring, 1.0, 255.0));
         // ws2812_set_led(ptr, HSVtoRGB(color_ring));
         ws2812_set_led(ptr >= 10 ? ptr - 10 : 160 - 10 + ptr, black);
-        ws2812_push();
 
         ptr++;
     }

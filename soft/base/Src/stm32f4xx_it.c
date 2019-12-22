@@ -244,7 +244,10 @@ void DMA2_Stream0_IRQHandler(void)
 void DMA2_Stream1_IRQHandler(void)
 {
     /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
-    ws2812_terminate();
+    if(DMA2->LISR & DMA_FLAG_TCIF1_5)
+    {
+        ws2812_terminate();
+    }
     /* USER CODE END DMA2_Stream1_IRQn 0 */
     HAL_DMA_IRQHandler(&hdma_tim1_ch1);
     /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
