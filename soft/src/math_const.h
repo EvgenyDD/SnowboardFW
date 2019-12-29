@@ -9,6 +9,11 @@
 
 #define SIGNF(x) ((x >= 0) ? 1 : -1)
 
-inline float angle_norm(float angle) { return fmodf(angle, 2 * PI); }
+inline float angle_norm(float angle)
+{
+    angle = fmodf(angle, 2 * PI);
+    if(angle < 0) angle += 2 * PI;
+    return angle;
+}
 
 #endif // MATH_CONST_H

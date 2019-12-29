@@ -1,5 +1,4 @@
-build/base/Src/stm32f4xx_it.o: base/Src/stm32f4xx_it.c \
- base/Inc/stm32f4xx_it.h base/Inc/main.h \
+build/base/Src/stm32f4xx_it.o: base/Src/stm32f4xx_it.c base/Inc/main.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  base/Inc/stm32f4xx_hal_conf.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -35,10 +34,8 @@ build/base/Src/stm32f4xx_it.o: base/Src/stm32f4xx_it.c \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_sdmmc.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
- base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h src/adc.h \
- src/ws2812.h
-
-base/Inc/stm32f4xx_it.h:
+ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
+ base/Inc/stm32f4xx_it.h src/adc.h src/ws2812.h
 
 base/Inc/main.h:
 
@@ -113,6 +110,8 @@ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
+
+base/Inc/stm32f4xx_it.h:
 
 src/adc.h:
 

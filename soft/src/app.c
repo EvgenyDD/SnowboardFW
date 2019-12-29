@@ -1,6 +1,7 @@
 #include "adc.h"
 #include "debounce.h"
 #include "debug.h"
+#include "fatfs.h"
 #include "main.h"
 #include "phys_engine.h"
 #include "ws2812.h"
@@ -110,6 +111,9 @@ void init(void)
     MPU6050_Write(0x1C, 0x10); // Register_UsCtrl = 1
 
     // ws2812_set_led(80, blue);
+
+    FRESULT res = f_mount(&SDFatFS, "0", 1);
+    debug("Mount FS: %s\n", ff_result_to_string(res));
 }
 
 void loop(void)
@@ -164,13 +168,13 @@ void loop(void)
 
             // static float angle = 1; //3.14159256/2;
             float angle = -0.42f +
-                          approx_atan2((float)accel[1] * 0.00024420024,
+                          approx_atan2((float)accel[1] * 0.00024420024 /*1/4095*/,
                                        (float)accel[2] * 0.00024420024); //3.14159256/2;
 
             phys_engine_poll(ts, angle);
 
-            ws2812_set_angle(phys_engine_get_angle(),
-                             phys_engine_get_w() * 20.0f);
+            // ws2812_set_angle(phys_engine_get_angle(),
+            //                  phys_engine_get_w() * 20.0f);
         }
     }
 
@@ -241,6 +245,76 @@ void loop(void)
                 debug("G=%d\n", gyro[0]);
                 debug("G=%d\n", gyro[1]);
                 debug("G=%d\n", gyro[2]);
+            }
+
+            if(i == 3 && btn[i].pressed)
+            {
+                do
+                {
+                    uint32_t freeClust;
+                    FATFS *fs_ptr = &SDFatFS;
+                    FRESULT res = f_getfree("", &freeClust, &fs_ptr);
+                    if(res != FR_OK)
+                    {
+                        debug("f_getfree() failed, res = %d\r\n", res);
+                        break;
+                    }
+
+                    uint32_t totalBlocks = (SDFatFS.n_fatent - 2) * SDFatFS.csize;
+                    uint32_t freeBlocks = freeClust * SDFatFS.csize;
+                    debug("Total blocks: %lu (%lu Mb)\r\n", totalBlocks, totalBlocks / 2000);
+                    debug("Free blocks: %lu (%lu Mb)\r\n", freeBlocks, freeBlocks / 2000);
+
+                    DIR dir;
+                    res = f_opendir(&dir, "/");
+                    if(res != FR_OK)
+                    {
+                        debug("f_opendir() failed, res = %d\r\n", res);
+                        break;
+                    }
+
+                    FILINFO fileInfo;
+                    uint32_t totalFiles = 0;
+                    uint32_t totalDirs = 0;
+                    debug("--------\r\nRoot directory:\r\n");
+                    for(;;)
+                    {
+                        res = f_readdir(&dir, &fileInfo);
+                        if((res != FR_OK) || (fileInfo.fname[0] == '\0'))
+                        {
+                            break;
+                        }
+
+                        if(fileInfo.fattrib & AM_DIR)
+                        {
+                            debug("  DIR  %s\r\n", fileInfo.fname);
+                            totalDirs++;
+                        }
+                        else
+                        {
+                            debug("  FILE %s\r\n", fileInfo.fname);
+                            totalFiles++;
+                        }
+                    }
+
+                    debug("(total: %lu dirs, %lu files)\r\n--------\r\n",
+                          totalDirs, totalFiles);
+
+                    FIL testFile;
+                    uint8_t path[] = "fuckthe shit";
+
+                    uint8_t testBuffer[16] = "SD write success";
+                    res = f_open(&testFile, (char *)path, FA_WRITE | FA_CREATE_NEW);
+
+                    debug("ONE: %s\n", ff_result_to_string(res));
+
+                    UINT testBytes;
+                    res = f_write(&testFile, testBuffer, strlen(testBuffer), &testBytes);
+                    debug("TWO: %s\n", ff_result_to_string(res));
+
+                    res = f_close(&testFile);
+                    debug("THREE: %s\n", ff_result_to_string(res));
+                } while(0);
             }
         }
         prev_btn[i] = btn[i].pressed;

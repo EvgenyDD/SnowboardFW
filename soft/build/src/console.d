@@ -1,5 +1,7 @@
-build/src/console.o: src/console.c src/adc.h src/debug.h base/Inc/main.h \
- base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
+build/src/console.o: src/console.c src/adc.h src/debug.h \
+ base/Middlewares/Third_Party/FatFs/src/ff.h \
+ base/Middlewares/Third_Party/FatFs/src/integer.h base/Inc/ffconf.h \
+ base/Inc/main.h base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  base/Inc/stm32f4xx_hal_conf.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
@@ -34,11 +36,18 @@ build/src/console.o: src/console.c src/adc.h src/debug.h base/Inc/main.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_sdmmc.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
- base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
+ base/Inc/bsp_driver_sd.h base/Inc/fatfs_platform.h base/Inc/main.h
 
 src/adc.h:
 
 src/debug.h:
+
+base/Middlewares/Third_Party/FatFs/src/ff.h:
+
+base/Middlewares/Third_Party/FatFs/src/integer.h:
+
+base/Inc/ffconf.h:
 
 base/Inc/main.h:
 
@@ -113,3 +122,9 @@ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
+
+base/Inc/bsp_driver_sd.h:
+
+base/Inc/fatfs_platform.h:
+
+base/Inc/main.h:

@@ -34,7 +34,13 @@ build/base/Src/main.o: base/Src/main.c base/Inc/main.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_sdmmc.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
- base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
+ base/Inc/fatfs.h base/Middlewares/Third_Party/FatFs/src/ff.h \
+ base/Middlewares/Third_Party/FatFs/src/integer.h base/Inc/ffconf.h \
+ base/Inc/main.h base/Inc/bsp_driver_sd.h base/Inc/fatfs_platform.h \
+ base/Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
+ base/Middlewares/Third_Party/FatFs/src/diskio.h \
+ base/Middlewares/Third_Party/FatFs/src/ff.h base/Inc/sd_diskio.h
 
 base/Inc/main.h:
 
@@ -109,3 +115,25 @@ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
+
+base/Inc/fatfs.h:
+
+base/Middlewares/Third_Party/FatFs/src/ff.h:
+
+base/Middlewares/Third_Party/FatFs/src/integer.h:
+
+base/Inc/ffconf.h:
+
+base/Inc/main.h:
+
+base/Inc/bsp_driver_sd.h:
+
+base/Inc/fatfs_platform.h:
+
+base/Middlewares/Third_Party/FatFs/src/ff_gen_drv.h:
+
+base/Middlewares/Third_Party/FatFs/src/diskio.h:
+
+base/Middlewares/Third_Party/FatFs/src/ff.h:
+
+base/Inc/sd_diskio.h:
