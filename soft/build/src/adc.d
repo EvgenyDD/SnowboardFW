@@ -1,4 +1,4 @@
-build/src/adc.o: src/adc.c src/debug.h \
+build/src/adc.o: src/adc.c src/adc.h src/debug.h \
  base/Middlewares/Third_Party/FatFs/src/ff.h \
  base/Middlewares/Third_Party/FatFs/src/integer.h base/Inc/ffconf.h \
  base/Inc/main.h base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
@@ -29,6 +29,7 @@ build/src/adc.o: src/adc.c src/debug.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c_ex.h \
+ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_iwdg.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rng.h \
@@ -37,8 +38,9 @@ build/src/adc.o: src/adc.c src/debug.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- base/Inc/bsp_driver_sd.h base/Inc/fatfs_platform.h base/Inc/main.h \
- src/adc.h
+ base/Inc/bsp_driver_sd.h base/Inc/fatfs_platform.h base/Inc/main.h
+
+src/adc.h:
 
 src/debug.h:
 
@@ -106,6 +108,8 @@ base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h:
 
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c_ex.h:
 
+base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_iwdg.h:
+
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h:
 
 base/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h:
@@ -127,5 +131,3 @@ base/Inc/bsp_driver_sd.h:
 base/Inc/fatfs_platform.h:
 
 base/Inc/main.h:
-
-src/adc.h:

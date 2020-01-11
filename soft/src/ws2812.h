@@ -18,11 +18,13 @@ typedef struct
 void ws2812_init(void);
 void ws2812_push(void);
 void ws2812_terminate(void);
-void ws2812_set_angle(float angle, float w);
+
+void ws2812_set_angle(float angle, float w, uint8_t brightness, uint8_t led_count);
 
 // API
 void ws2812_clear(void);
-void ws2812_set_led(uint16_t id, Color_t color);
+void ws2812_set_led(uint16_t id, const Color_t *color);
+void ws2812_set_led_recursive(int16_t id, const Color_t *color);
 
 extern const Color_t black;
 extern const Color_t red;

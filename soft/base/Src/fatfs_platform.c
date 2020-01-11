@@ -5,7 +5,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under Ultimate Liberty license
@@ -20,12 +20,13 @@
 uint8_t	BSP_PlatformIsDetected(void) {
     uint8_t status = SD_PRESENT;
     /* Check SD card detect pin */
-    // if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
-    // {
-    //     status = SD_NOT_PRESENT;
-    // }
+    if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
+    {
+        status = SD_NOT_PRESENT;
+    }
     /* USER CODE BEGIN 1 */
     /* user code can be inserted here */
+    status = SD_PRESENT;
     /* USER CODE END 1 */ 
     return status;
 }  

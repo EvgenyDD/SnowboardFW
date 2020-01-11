@@ -6,7 +6,7 @@
 float c_damp = 0.8;
 float c_scale = 7;
 
-static float w = 0; // velocity
+static float w = 0;    // velocity
 static float a = -0.9; // angle
 
 void phys_engine_reset(void)

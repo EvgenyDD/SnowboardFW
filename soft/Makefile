@@ -164,6 +164,7 @@ SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c
 SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c 
 SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c 
 SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c 
+SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_iwdg.c 
 SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_sd.c 
 SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_sdmmc.c 
 SOURCES += base/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c 

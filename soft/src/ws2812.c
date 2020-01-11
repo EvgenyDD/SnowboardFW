@@ -16,7 +16,7 @@ const Color_t white = {255, 255, 255};
 static bool transfer_enabled = false;
 
 #define DELAY_LEN 48
-#define ARRAY_LEN 1 + LED_COUNT * 24 + DELAY_LEN
+#define ARRAY_LEN 5 + LED_COUNT * 24 + DELAY_LEN
 
 #define TIM_COMPARE_HIGH 22
 #define TIM_COMPARE_LOW 8
@@ -40,7 +40,7 @@ static const uint8_t gamma8[] = {
     115, 117, 119, 120, 122, 124, 126, 127, 129, 131, 133, 135, 137, 138, 140, 142,
     144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
     177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213,
-    215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252, 255};
+    215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252, 255, 0, 0, 0};
 
 void blend(const uint8_t *in_a, const uint8_t *in_b, uint8_t *out, float amount)
 {
@@ -143,33 +143,98 @@ void ws2812_push(void)
 
     transfer_enabled = true;
 
-    uint32_t iterator = 1;
+    uint32_t iterator = 5;
     for(uint32_t led = 0; led < LED_COUNT; led++)
     {
         // g
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator++] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            buffer_dma[iterator] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            iterator++;
         }
 
         // r
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator++] = gamma8[leds[led].color_r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            buffer_dma[iterator] = gamma8[leds[led].color_r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            iterator++;
         }
 
         // b
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator++] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            buffer_dma[iterator] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            iterator++;
         }
     }
     HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)&buffer_dma, ARRAY_LEN);
 }
 
+HAL_StatusTypeDef _HAL_TIM_PWM_Stop_DMA(TIM_HandleTypeDef *htim, uint32_t Channel)
+{
+    /* Check the parameters */
+    assert_param(IS_TIM_CCX_INSTANCE(htim->Instance, Channel));
+
+    switch(Channel)
+    {
+    case TIM_CHANNEL_1:
+    {
+        /* Disable the TIM Capture/Compare 1 DMA request */
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
+        (void)HAL_DMA_Abort_IT(htim->hdma[TIM_DMA_ID_CC1]);
+        break;
+    }
+
+    case TIM_CHANNEL_2:
+    {
+        /* Disable the TIM Capture/Compare 2 DMA request */
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC2);
+        (void)HAL_DMA_Abort_IT(htim->hdma[TIM_DMA_ID_CC2]);
+        break;
+    }
+
+    case TIM_CHANNEL_3:
+    {
+        /* Disable the TIM Capture/Compare 3 DMA request */
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC3);
+        (void)HAL_DMA_Abort_IT(htim->hdma[TIM_DMA_ID_CC3]);
+        break;
+    }
+
+    case TIM_CHANNEL_4:
+    {
+        /* Disable the TIM Capture/Compare 4 interrupt */
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
+        (void)HAL_DMA_Abort_IT(htim->hdma[TIM_DMA_ID_CC4]);
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    /* Disable the Capture compare channel */
+    //   TIM_CCxChannelCmd(htim->Instance, Channel, TIM_CCx_DISABLE);
+
+    if(IS_TIM_BREAK_INSTANCE(htim->Instance) != RESET)
+    {
+        /* Disable the Main Output */
+        __HAL_TIM_MOE_DISABLE(htim);
+    }
+
+    /* Disable the Peripheral */
+    //   __HAL_TIM_DISABLE(htim);
+
+    /* Change the htim state */
+    htim->State = HAL_TIM_STATE_READY;
+
+    /* Return function status */
+    return HAL_OK;
+}
+
 void ws2812_terminate(void)
 {
-    HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
+    _HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
     // TIM1->CCR1 = 0;
     // __HAL_TIM_DISABLE(&htim1);
     transfer_enabled = false;
@@ -177,10 +242,22 @@ void ws2812_terminate(void)
 
 void ws2812_clear(void) { memset(leds, 0, sizeof(leds)); }
 
-void ws2812_set_led(uint16_t id, Color_t color)
+void ws2812_set_led(uint16_t id, const Color_t *color)
 {
     if(id >= LED_COUNT) return;
-    leds[id] = color;
+
+    memcpy(&leds[id], color, sizeof(Color_t));
+}
+
+void ws2812_set_led_recursive(int16_t id, const Color_t *color)
+{
+    while(id >= LED_COUNT)
+        id -= LED_COUNT;
+    while(id < 0)
+        id += LED_COUNT;
+    if(id >= LED_COUNT) return;
+
+    memcpy(&leds[id], color, sizeof(Color_t));
 }
 
 /**
@@ -240,29 +317,28 @@ Color_t hsv2rgb(float h, float s, float v)
     return out;
 }
 
-void ws2812_set_angle(float angle, float w)
+void ws2812_set_angle(float angle, float w, uint8_t brightness, uint8_t led_count)
 {
     const float offset = 0;
 
     float normed = angle + offset;
     normed = angle_norm(normed);
 
-    static float prev_start = -999;
+    // static float prev_start = -999;
     int start = (float)LED_COUNT * normed * ONE_DIV_2PI;
 
-    if(prev_start != start)
+    // if(prev_start != start)
     {
-#define LIGHT_LED_COUNT 25
         float w_abs = fabsf(w);
         float w_trunc = w_abs > 120.0f ? 120.0f : w_abs;
-        Color_t light_color = hsv2rgb(240 + w_trunc, 1.0f, 255.0f);
+        Color_t light_color = hsv2rgb(240 + w_trunc, 1.0f, brightness);
 
         for(uint32_t i = 0; i < LED_COUNT; i++)
         {
-            ws2812_set_led(i, interval_hit_bool((int32_t)i, start, LIGHT_LED_COUNT / 2, LED_COUNT)
-                                  ? light_color
-                                  : black);
+            ws2812_set_led(i, interval_hit_bool((int32_t)i, start, led_count / 2, LED_COUNT)
+                                  ? &light_color
+                                  : &black);
         }
-        prev_start = start;
+        // prev_start = start;
     }
 }

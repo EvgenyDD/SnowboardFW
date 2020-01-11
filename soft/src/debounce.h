@@ -10,6 +10,8 @@ typedef struct
     int16_t debounce_config;
     int16_t debounce_timer;
     bool pressed;
+    bool pressed_shot;
+    bool unpressed_shot;
 } button_ctrl_t;
 
 /**
@@ -42,11 +44,16 @@ inline bool debounce_cb(button_ctrl_t *ctrl, bool state_now, int16_t time_cb_dif
             ctrl->debounce_timer -= time_cb_diff;
     }
 
+    ctrl->pressed_shot = false;
+    ctrl->unpressed_shot = false;
+
     if((ctrl->pressed != state_now) &&
        (ctrl->debounce_timer == 0))
     {
         ctrl->debounce_timer = ctrl->debounce_config;
         ctrl->pressed = state_now;
+        if(ctrl->pressed) ctrl->pressed_shot = true;
+        else ctrl->unpressed_shot = true;
         return true;
     }
 
