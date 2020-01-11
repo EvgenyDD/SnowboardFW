@@ -302,7 +302,7 @@ void dm_poll(uint32_t diff_ms)
 
     case DM_RIDE0:
     {
-        if(accel[0] > 500 && fabsf(accel[1] < 1000) && fabsf(accel[2]) < 1000)
+        if(accel[0] > 3000 && fabsf(accel[1] < 2500) && fabsf(accel[2]) < 2500)
             dm_switch_mode_sparkle();
         else
         {
@@ -355,7 +355,7 @@ void dm_poll(uint32_t diff_ms)
 
     case DM_RIDE_SPARKLE:
     {
-        if(accel[0] > 500 && fabsf(accel[1] < 1000) && fabsf(accel[2]) < 1000)
+        if(accel[0] > 2000 && fabsf(accel[1] < 2500) && fabsf(accel[2]) < 2500)
             dm_switch_mode_sparkle();
         Color_t x = {100, 0, 0};
         ws2812_set_led(LED_COUNT / 2, &x);

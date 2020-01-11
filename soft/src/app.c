@@ -337,7 +337,6 @@ void loop(void)
 
         if(btn[1].pressed_shot)
         {
-            dm_switch_mode_sparkle();
             shift_selection = !shift_selection;
             if(shift_selection)
             {
