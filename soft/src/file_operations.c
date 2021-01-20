@@ -1,8 +1,11 @@
 #include "file_operations.h"
 #include "debug.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 extern RNG_HandleTypeDef hrng;
+extern RTC_HandleTypeDef hrtc;
 
 enum
 {
@@ -79,18 +82,22 @@ int file_op_log_enable(void)
     file_op_upd_count_bin(&log_file_serial_num);
     // debug("New log file count iterator: %d\n", log_file_serial_num);
 
-    char path[] = "LOG_******_20200101_000000_***.log";
-    log_file_serial_num %= 1000000;
-    for(uint32_t i = 0; i < 6; i++)
-    {
-        path[4 + 5 - i] = (log_file_serial_num % 10) + '0';
-        log_file_serial_num /= 10;
-    }
+    RTC_TimeTypeDef time = {0};
+    RTC_DateTypeDef date = {0};
 
-    for(uint32_t i = 27; i <= 29; i++)
-    {
-        path[i] = (char)((HAL_RNG_GetRandomNumber(&hrng) % 26) + 'a');
-    }
+    char trans_str[64] = {0};
+
+    HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+
+    char path[128] = {0};
+    snprintf(path, sizeof(path), "LOG_%06lu_20%02d%02d%02d_%02d%02d%02d_%c%c%c.log",
+             log_file_serial_num % 1000000,
+             date.Year, date.Month, date.Date,
+             time.Hours, time.Minutes, time.Seconds,
+             (char)((HAL_RNG_GetRandomNumber(&hrng) % 26) + 'a'),
+             (char)((HAL_RNG_GetRandomNumber(&hrng) % 26) + 'a'),
+             (char)((HAL_RNG_GetRandomNumber(&hrng) % 26) + 'a'));
 
     debug("Log file name: %s\n", path);
 
@@ -198,7 +205,7 @@ void file_op_test(void)
         debug("ONE: %s\n", ff_result_to_string(res));
 
         UINT testBytes;
-        res = f_write(&testFile, testBuffer, strlen(testBuffer), &testBytes);
+        res = f_write(&testFile, testBuffer, (UINT)strlen(testBuffer), &testBytes);
         debug("TWO: %s\n", ff_result_to_string(res));
 
         res = f_close(&testFile);
