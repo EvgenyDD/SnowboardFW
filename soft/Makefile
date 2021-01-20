@@ -1,7 +1,7 @@
 #
 #Executable name
 #
-EXE_NAME=head
+EXE_NAME=ctrl
 
 #
 #Folder to place compiled objects
@@ -185,7 +185,7 @@ SOURCES += base/Src/system_stm32f4xx.c
 SOURCES += base/Src/stm32f4xx_it.c
 SOURCES += base/Src/stm32f4xx_hal_msp.c
 
-SOURCES += $(wildcard base/Middlewares/Third_Party/FatFs/src/option*.c)
+SOURCES += $(wildcard base/Middlewares/Third_Party/FatFs/src/option/*.c)
 SOURCES += $(wildcard base/Middlewares/Third_Party/FatFs/src/*.c)
 
 SOURCES += $(wildcard src/*.c)

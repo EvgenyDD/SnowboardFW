@@ -2,13 +2,13 @@
 #include "adc.h"
 #include "debug.h"
 #include "main.h"
+#include "mpu6050.h"
 #include "ws2812.h"
 #include <math.h>
 
 #include "phys_engine.h"
 
 extern RNG_HandleTypeDef hrng;
-extern float accel[3], gyro[3];
 
 DM_SHOW_T show = DM_IDLE, show_next = DM_IDLE;
 uint32_t to = 0;
@@ -158,8 +158,8 @@ void dm_poll(uint32_t diff_ms)
 
         // static float angle = 1; //3.14159256/2;
         float angle = -0.42f +
-                      approx_atan2((float)accel[1] * 0.00024420024 /*1/4095*/,
-                                   (float)accel[2] * 0.00024420024); //3.14159256/2;
+                      approx_atan2((float)accel_filt[1] * 0.00024420024 /*1/4095*/,
+                                   (float)accel_filt[2] * 0.00024420024); //3.14159256/2;
 
         phys_engine_poll(ts, angle);
 
@@ -302,7 +302,7 @@ void dm_poll(uint32_t diff_ms)
 
     case DM_RIDE0:
     {
-        if(accel[0] > 3000 && fabsf(accel[1] < 2500) && fabsf(accel[2]) < 2500)
+        if(accel_filt[0] > 3000 && fabsf(accel_filt[1] < 2500) && fabsf(accel_filt[2]) < 2500)
             dm_switch_mode_sparkle();
         else
         {
@@ -312,7 +312,7 @@ void dm_poll(uint32_t diff_ms)
 
             Color_t c = hsv2rgb(hue, 1.0, param[show]);
 
-            if(accel[1] < -500)
+            if(accel_filt[1] < -500)
             {
                 ws2812_clear();
                 for(uint32_t i = 0; i < 15; i++)
@@ -320,8 +320,8 @@ void dm_poll(uint32_t diff_ms)
                 for(uint32_t i = 125; i < LED_COUNT; i++)
                     ws2812_set_led(i, &c);
 
-                int offsetp = map(accel[1], -3000, -500, 15, 45);
-                int offsetn = map(accel[1], -3000, -500, 125, 95);
+                int offsetp = map(accel_filt[1], -3000, -500, 15, 45);
+                int offsetn = map(accel_filt[1], -3000, -500, 125, 95);
 
                 for(int32_t i = 15; i < offsetp; i++)
                     ws2812_set_led(i, &c);
@@ -329,14 +329,14 @@ void dm_poll(uint32_t diff_ms)
                 for(int32_t i = 125; i > offsetn; i--)
                     ws2812_set_led(i, &c);
             }
-            else if(accel[1] > 500)
+            else if(accel_filt[1] > 500)
             {
                 ws2812_clear();
                 for(uint32_t i = 45; i < 95; i++)
                     ws2812_set_led(i, &c);
 
-                int offsetp = map(accel[1], 500, 3000, 15, 45);
-                int offsetn = map(accel[1], 500, 3000, 125, 95);
+                int offsetp = map(accel_filt[1], 500, 3000, 15, 45);
+                int offsetn = map(accel_filt[1], 500, 3000, 125, 95);
 
                 for(int32_t i = 95; i < offsetn; i++)
                     ws2812_set_led(i, &c);
@@ -355,7 +355,7 @@ void dm_poll(uint32_t diff_ms)
 
     case DM_RIDE_SPARKLE:
     {
-        if(accel[0] > 2000 && fabsf(accel[1] < 2500) && fabsf(accel[2]) < 2500)
+        if(accel_filt[0] > 2000 && fabsf(accel_filt[1] < 2500) && fabsf(accel_filt[2]) < 2500)
             dm_switch_mode_sparkle();
         Color_t x = {100, 0, 0};
         ws2812_set_led(LED_COUNT / 2, &x);

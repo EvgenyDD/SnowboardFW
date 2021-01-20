@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LED_COUNT 160
+#define LED_COUNT (160+17)
 // #define LED_COUNT 200
 
 typedef struct

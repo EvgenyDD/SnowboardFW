@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart3;
 
 #define CON_OUT_BUF_SZ 512
 #define CON_IN_BUF_SZ 512
@@ -25,7 +25,7 @@ void debug(char *format, ...)
     vsnprintf(buffer, CON_OUT_BUF_SZ, format, ap);
     va_end(ap);
 
-    HAL_UART_Transmit(&huart1, buffer, strlen(buffer), 200);
+    HAL_UART_Transmit(&huart3, buffer, strlen(buffer), 200);
 }
 
 void debug_rx(char x)
@@ -42,8 +42,4 @@ void debug_rx(char x)
         buffer_rx[buffer_rx_cnt] = x;
         buffer_rx_cnt++;
     }
-}
-
-void debug_poll(void)
-{
 }

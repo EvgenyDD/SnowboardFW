@@ -1,7 +1,6 @@
 #include "adc.h"
 #include "debug.h"
 #include "main.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,18 +13,17 @@ static int strcmp_(char *s1, char *s2)
         if(*s1 == '\n' || *s1 == '\0') return 1;
         if(*s2 == '\n' || *s2 == '\0') return 1;
         if(*s1 != *s2) return 0;
-
         s1++;
         s2++;
     }
 }
- 
+
 static int find_space(char *s)
 {
     char *ss = s;
     for(;; ss++)
     {
-        if(*ss == '\n' || ss == '\0') return 0;
+        if(*ss == '\n' || *ss == '\0') return 0;
         if(*ss == ' ') return ss - s + 1;
     }
 }

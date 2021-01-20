@@ -5,7 +5,6 @@
 
 void debug(char *format, ...);
 void debug_rx(char x);
-void debug_poll(void);
 
 inline const char *ff_result_to_string(FRESULT r)
 {

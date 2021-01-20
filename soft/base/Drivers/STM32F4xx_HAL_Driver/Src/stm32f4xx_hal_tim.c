@@ -1688,7 +1688,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_Stop_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
   }
 
   /* Disable the Capture compare channel */
-//   TIM_CCxChannelCmd(htim->Instance, Channel, TIM_CCx_DISABLE);
+  TIM_CCxChannelCmd(htim->Instance, Channel, TIM_CCx_DISABLE);
 
   if (IS_TIM_BREAK_INSTANCE(htim->Instance) != RESET)
   {
@@ -1697,7 +1697,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_Stop_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
   }
 
   /* Disable the Peripheral */
-//   __HAL_TIM_DISABLE(htim);
+  __HAL_TIM_DISABLE(htim);
 
   /* Change the htim state */
   htim->State = HAL_TIM_STATE_READY;

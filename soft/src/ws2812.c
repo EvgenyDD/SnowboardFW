@@ -146,10 +146,10 @@ void ws2812_push(void)
     uint32_t iterator = 5;
     for(uint32_t led = 0; led < LED_COUNT; led++)
     {
-        // g
+        // b
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            buffer_dma[iterator] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
             iterator++;
         }
 
@@ -160,10 +160,10 @@ void ws2812_push(void)
             iterator++;
         }
 
-        // b
+        // g
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+            buffer_dma[iterator] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
             iterator++;
         }
     }

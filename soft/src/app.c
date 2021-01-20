@@ -3,100 +3,23 @@
 #include "debug.h"
 #include "dm.h"
 #include "fatfs.h"
+#include "file_operations.h"
 #include "main.h"
+#include "mpu6050.h"
 #include "phys_engine.h"
 #include "ws2812.h"
 #include <stdio.h>
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
-
 extern CRC_HandleTypeDef hcrc;
-
-extern RNG_HandleTypeDef hrng;
-
 extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;
-
+extern UART_HandleTypeDef huart3;
 extern IWDG_HandleTypeDef hiwdg;
+extern I2C_HandleTypeDef hi2c1;
 
-bool logging_enabled = false;
-
-FIL file_log;
-
-I2C_HandleTypeDef hi2c1;
-
-button_ctrl_t btn[4];
-
-float accel[3], gyro[3];
-int16_t _accel[3], _gyro[3];
-
-void MPU6050_Write(uint8_t Reg, uint8_t Data)
-{
-    uint8_t d[2] = {Reg, Data};
-    HAL_StatusTypeDef sts = HAL_I2C_Master_Transmit(&hi2c1, 0x68 << 1, d, 2, 100);
-    if(sts != 0)
-    {
-        // debug("FAIL: %d\n", sts);
-    }
-    // while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY))
-    //     ;
-    // I2C_GenerateSTART(I2C1, ENABLE);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT))
-    //     ;
-    // I2C_Send7bitAddress(I2C1, (0x68 << 1), I2C_Direction_Transmitter);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-    //     ;
-    // I2C_SendData(I2C1, Reg); // Передаём адрес регистра
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-    //     ;
-    // I2C_SendData(I2C1, Data); // Передаём данные
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-    //     ;
-    // I2C_GenerateSTOP(I2C1, ENABLE);
-}
-
-uint8_t MPU6050_Read(uint8_t Reg)
-{
-
-    HAL_StatusTypeDef sts = HAL_I2C_Master_Transmit(&hi2c1, 0x68 << 1, &Reg, 1, 100);
-    if(sts != 0)
-    {
-        // debug("FAIL: %d\n", sts);
-    }
-    static uint8_t Data;
-    sts = HAL_I2C_Master_Receive(&hi2c1, 0x68 << 1, &Data, 1, 100);
-    if(sts != 0)
-    {
-        // debug("FAIL: %d\n", sts);
-    }
-    return Data;
-    // while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY))
-    //     ;
-    // I2C_GenerateSTART(I2C1, ENABLE);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT))
-    //     ;
-    // I2C_Send7bitAddress(I2C1, (0x68 << 1), I2C_Direction_Transmitter);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-    //     ;
-    // I2C_Cmd(I2C1, ENABLE);
-    // I2C_SendData(I2C1, Reg); // Передаём адрес регистра
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-    //     ;
-    // I2C_GenerateSTART(I2C1, ENABLE);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT))
-    //     ;
-    // I2C_Send7bitAddress(I2C1, (0x68 << 1), I2C_Direction_Receiver);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
-    //     ;
-    // I2C_AcknowledgeConfig(I2C1, DISABLE);
-    // I2C_GenerateSTOP(I2C1, ENABLE);
-    // while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_RECEIVED))
-    //     ;
-    // Data = I2C_ReceiveData(I2C1); // Принимаем данные
-    // I2C_AcknowledgeConfig(I2C1, ENABLE);
-    // return Data;
-}
+static bool logging_enabled = false;
+static button_ctrl_t btn[4];
 
 void init(void)
 {
@@ -106,8 +29,8 @@ void init(void)
     LED3_GPIO_Port->ODR |= LED3_Pin;
 
     __HAL_UART_ENABLE(&huart1);
+    __HAL_UART_ENABLE(&huart3);
     __HAL_I2C_ENABLE(&hi2c1);
-    // __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
 
     adc_init();
     ws2812_init();
@@ -121,31 +44,11 @@ void init(void)
 
     PWR_EN_GPIO_Port->ODR |= PWR_EN_Pin;
 
-    // LED1_GPIO_Port->ODR ^= LED1_Pin;
-    // LED3_GPIO_Port->ODR ^= LED3_Pin;
-
-    // MPU6050_I2C_init(); // Настраиваем I2C
-    // for(uint32_t i32 = 0; i32 < 100000; i32++)
-    // {
-    // };
-
     while(HAL_GetTick() < 800)
         asm("nop");
 
-    //Датчик тактируется от встроенного 8Мгц осциллятора
-    //MPU6050_Write(0x6B, 0x41); // Register_PWR_M1 = 0, Disable sleep mode
-    MPU6050_Write(0x6B, 0x00);
-
-    //Выполнить очистку встроенных регистров датчика
-    MPU6050_Write(0x1b, 0x08); // Register_UsCtrl = 1
-
-    MPU6050_Write(0x1C, 0x10); // Register_UsCtrl = 1
-
-    // ws2812_set_led(80, blue);
-
-    FRESULT res = f_mount(&SDFatFS, "", 1);
-    debug("Mount FS: %s\n", ff_result_to_string(res));
-
+    mpu6050_init();
+    file_op_init();
     dm_init();
 
     LED0_GPIO_Port->ODR &= (uint32_t)~LED0_Pin;
@@ -169,14 +72,15 @@ void loop(void)
     static uint32_t prev_tick = 0;
     if(prev_tick < HAL_GetTick())
     {
-        prev_tick = HAL_GetTick() + 500;
-        // LED0_GPIO_Port->ODR ^= LED0_Pin;
-        // LED3_GPIO_Port->ODR ^= LED3_Pin;
+        prev_tick = HAL_GetTick() + 1000;
 
         static float i = 0;
         i += 0.5f;
 
-        debug("A=%.0f %.0f %.0f\n", accel[0], accel[1], accel[2]);
+        debug("A: %.0f %.0f %.0f | G: %0.f %0.f %0.f | Vbat: %0.2f | Temp: %0.1f\n",
+              accel_filt[0], accel_filt[1], accel_filt[2],
+              gyro_filt[0], gyro_filt[1], gyro_filt[2],
+              adc_get_v_bat(), adc_get_temp());
     }
 
     if(diff_ms > 0)
@@ -194,74 +98,24 @@ void loop(void)
 
     if(diff_ms > 0)
     {
-        // IMU
+        if(mpu6050_read_acc_gyro(diff_ms))
         {
-            uint8_t dat = MPU6050_Read(0x3a);
-
-            static uint32_t fail_read = 0;
-
-            if(dat & 1)
+            if(logging_enabled)
             {
-                fail_read = 0;
+                uint8_t buf[128] = "";
 
-                LED2_GPIO_Port->ODR ^= LED2_Pin;
-                _accel[0] = MPU6050_Read(0x3B) << 8;
-                _accel[0] |= MPU6050_Read(0x3C);
-                _accel[1] = MPU6050_Read(0x3D) << 8;
-                _accel[1] |= MPU6050_Read(0x3E);
-                _accel[2] = MPU6050_Read(0x3F) << 8;
-                _accel[2] |= MPU6050_Read(0x40);
-                _gyro[0] = MPU6050_Read(0x43) << 8;
-                _gyro[0] |= MPU6050_Read(0x44);
-                _gyro[1] = MPU6050_Read(0x45) << 8;
-                _gyro[1] |= MPU6050_Read(0x46);
-                _gyro[2] = MPU6050_Read(0x47) << 8;
-                _gyro[2] |= MPU6050_Read(0x48);
+                snprintf(buf, sizeof(buf), "%d %d %d %d %d %d %d\r\n",
+                         (int)HAL_GetTick(),
+                         accel_raw[0],
+                         accel_raw[1],
+                         accel_raw[2],
+                         gyro_raw[0],
+                         gyro_raw[1],
+                         gyro_raw[2]);
 
-                for(int i = 0; i < 3; i++)
-                {
-                    UTILS_LP_FAST(accel[i], (float)_accel[i], 0.2);
-                    UTILS_LP_FAST(gyro[i], (float)_gyro[i], 0.2);
-                }
+                size_t len = strlen(buf);
 
-                if(logging_enabled)
-                {
-                    uint8_t buf[128] = "";
-
-                    snprintf(buf, sizeof(buf), "%d %d %d %d %d %d %d\r\n",
-                             (int)HAL_GetTick(),
-                             _accel[0],
-                             _accel[1],
-                             _accel[2],
-                             _gyro[0],
-                             _gyro[1],
-                             _gyro[2]);
-
-                    UINT testBytes;
-                    size_t len = strlen(buf);
-                    FRESULT res = f_write(&file_log, buf, strlen(buf), &testBytes);
-                    if(res != FR_OK)
-                    {
-                        debug("Write file failed: %s\n", ff_result_to_string(res));
-                        f_close(&file_log);
-                    }
-                    if(len != testBytes)
-                    {
-                        debug("Write file failed mismatch: %d writed: %d\n", len, testBytes);
-                        f_close(&file_log);
-                    }
-                }
-            }
-            else
-            {
-                fail_read += diff_ms;
-                if(fail_read > 200)
-                {
-                    for(int i = 0; i < 3; i++)
-                    {
-                        accel[i] = gyro[i] = 0;
-                    }
-                }
+                if(file_op_log(buf, strlen(buf)) == 0) logging_enabled = false;
             }
         }
     }
@@ -285,8 +139,7 @@ void loop(void)
             {
                 if(dm_get_mode() == DM_BAT)
                 {
-                    f_close(&file_log);
-                    debug("Disable logging\n");
+                    file_op_log_disable();
                     must_turn_off = true;
                 }
 
@@ -304,34 +157,17 @@ void loop(void)
         {
             if(btn[0].pressed_shot)
             {
+                shift_selection = false;
 
                 if(logging_enabled)
                 {
-                    f_close(&file_log);
+                    file_op_log_disable();
                     logging_enabled = false;
-                    debug("Disable logging\n");
                 }
-                else
+                else if(file_op_log_enable())
                 {
-                    char path[] = "l******.log";
-
-                    for(uint32_t i = 1; i <= 6; i++)
-                    {
-                        path[i] = (char)((HAL_RNG_GetRandomNumber(&hrng) % 26) + 'a');
-                    }
-
-                    debug("Log file name: %s\n", path);
-
-                    FRESULT res = f_open(&file_log, path, FA_WRITE | FA_CREATE_ALWAYS);
-                    debug("Open log file: %s\n", ff_result_to_string(res));
-                    if(res == FR_OK)
-                    {
-                        debug("Enable logging\n");
-                        logging_enabled = true;
-                    }
+                    logging_enabled = true;
                 }
-
-                shift_selection = false;
             }
         }
 
@@ -352,100 +188,9 @@ void loop(void)
         }
     }
 
-    if(0)
-        for(uint8_t i = 0; i < 4; i++)
-        {
-            if(btn[i].pressed != prev_btn[i])
-            {
-                if(i == 2)
-                {
-                    // debug("Vbat percent: %.3f\n", get_percent_battery());
-                    adc_print();
-                    // debug("A=%d\n", accel[0]);
-                    // debug("A=%d\n", accel[1]);
-                    // debug("A=%d\n", accel[2]);
-                    // debug("G=%d\n", gyro[0]);
-                    // debug("G=%d\n", gyro[1]);
-                    // debug("G=%d\n", gyro[2]);
-                }
-
-                if(i == 3 && btn[i].pressed)
-                {
-                    do
-                    {
-                        uint32_t freeClust;
-                        FATFS *fs_ptr = &SDFatFS;
-                        FRESULT res = f_getfree("", &freeClust, &fs_ptr);
-                        if(res != FR_OK)
-                        {
-                            debug("f_getfree() failed, res = %d\r\n", res);
-                            break;
-                        }
-
-                        uint32_t totalBlocks = (SDFatFS.n_fatent - 2) * SDFatFS.csize;
-                        uint32_t freeBlocks = freeClust * SDFatFS.csize;
-                        debug("Total blocks: %lu (%lu Mb)\r\n", totalBlocks, totalBlocks / 2000);
-                        debug("Free blocks: %lu (%lu Mb)\r\n", freeBlocks, freeBlocks / 2000);
-
-                        DIR dir;
-                        res = f_opendir(&dir, "/");
-                        if(res != FR_OK)
-                        {
-                            debug("f_opendir() failed, res = %d\r\n", res);
-                            break;
-                        }
-
-                        FILINFO fileInfo;
-                        uint32_t totalFiles = 0;
-                        uint32_t totalDirs = 0;
-                        debug("--------\r\nRoot directory:\r\n");
-                        for(;;)
-                        {
-                            res = f_readdir(&dir, &fileInfo);
-                            if((res != FR_OK) || (fileInfo.fname[0] == '\0'))
-                            {
-                                break;
-                            }
-
-                            if(fileInfo.fattrib & AM_DIR)
-                            {
-                                debug("  DIR  %s\r\n", fileInfo.fname);
-                                totalDirs++;
-                            }
-                            else
-                            {
-                                debug("  FILE %s\r\n", fileInfo.fname);
-                                totalFiles++;
-                            }
-                        }
-
-                        debug("(total: %lu dirs, %lu files)\r\n--------\r\n",
-                              totalDirs, totalFiles);
-
-                        FIL testFile;
-                        uint8_t path[] = "fuckthe shit";
-
-                        uint8_t testBuffer[16] = "SD write success";
-                        res = f_open(&testFile, (char *)path, FA_READ | FA_WRITE | FA_OPEN_EXISTING);
-
-                        debug("ONE: %s\n", ff_result_to_string(res));
-
-                        UINT testBytes;
-                        res = f_write(&testFile, testBuffer, strlen(testBuffer), &testBytes);
-                        debug("TWO: %s\n", ff_result_to_string(res));
-
-                        res = f_close(&testFile);
-                        debug("THREE: %s\n", ff_result_to_string(res));
-                    } while(0);
-                }
-            }
-        }
-
+    for(uint8_t i = 0; i < 4; i++)
     {
-        for(uint8_t i = 0; i < 4; i++)
-        {
-            prev_btn[i] = btn[i].pressed;
-        }
+        prev_btn[i] = btn[i].pressed;
     }
 
     HAL_IWDG_Refresh(&hiwdg);

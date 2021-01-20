@@ -2,9 +2,6 @@
 */Project Logs*
 */Project Outputs*
 */__Previews/*
-*/build/*
-build/*
-*/build-*
 */Debug/
 *.Debug
 *.Release
@@ -28,3 +25,4 @@ ui/Makefile
 *.log
 logs
 *.ini
+soft/build/*
