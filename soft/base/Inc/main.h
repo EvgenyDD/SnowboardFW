@@ -74,6 +74,8 @@ void Error_Handler(void);
 #define BTN0_GPIO_Port GPIOA
 #define LED0_Pin GPIO_PIN_4
 #define LED0_GPIO_Port GPIOC
+#define WS2812_ENABLE_Pin GPIO_PIN_11
+#define WS2812_ENABLE_GPIO_Port GPIOB
 #define PWR_EN_Pin GPIO_PIN_7
 #define PWR_EN_GPIO_Port GPIOC
 #define WS2812_Pin GPIO_PIN_8
