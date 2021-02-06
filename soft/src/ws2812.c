@@ -143,9 +143,14 @@ void ws2812_push(void)
 
     transfer_enabled = true;
 
+	bool is_on = false;
     uint32_t iterator = 5;
     for(uint32_t led = 0; led < LED_COUNT; led++)
     {
+		if(leds[led].color_r ||
+		   leds[led].color_g ||
+		   leds[led].color_b) is_on = true;
+
         // b
         for(uint32_t i = 0; i < 8; i++)
         {
@@ -156,17 +161,18 @@ void ws2812_push(void)
         // r
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator] = gamma8[leds[led].color_r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+			buffer_dma[iterator] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
             iterator++;
         }
 
         // g
         for(uint32_t i = 0; i < 8; i++)
         {
-            buffer_dma[iterator] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+			buffer_dma[iterator] = gamma8[leds[led].color_r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
             iterator++;
         }
     }
+	HAL_GPIO_WritePin(WS2812_ENABLE_GPIO_Port, WS2812_ENABLE_Pin, is_on);
     HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)&buffer_dma, ARRAY_LEN);
 }
 
