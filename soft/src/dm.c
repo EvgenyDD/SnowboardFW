@@ -41,11 +41,8 @@ void dm_switch_parameter(void)
 	{
 	default: break;
 
+	case DM_RANDOM_COLOR:
 	case DM_RAINBOW_ROTATE:
-		*p += 30;
-		if(*p < 100 || *p > 240) *p = 100;
-		break;
-
 	case DM_PENDULUM:
 		*p += 30;
 		if(*p < 100 || *p > 240) *p = 100;
@@ -132,6 +129,39 @@ void dm_poll(uint32_t diff_ms)
 		{
 			ws2812_set_led(i, &black);
 		}
+	}
+	break;
+
+	case DM_RANDOM_COLOR:
+	{
+		static uint32_t trans_timer = 0;
+		static float hue_tgt = 0, hue_now = 0, hue_incr;
+
+		if(trans_timer == 0)
+		{
+			trans_timer = 1000 + (HAL_RNG_GetRandomNumber(&hrng) % 8000);
+
+			do
+			{
+				hue_tgt = HAL_RNG_GetRandomNumber(&hrng) % 360;
+			} while(fabsf(hue_tgt - hue_now) < 20 || fabsf(hue_tgt - hue_now) > 340);
+
+			if(fabsf(hue_tgt - hue_now) < 360 - fabsf(hue_tgt - hue_now))
+				hue_incr = (hue_tgt - hue_now) / (float)trans_timer;
+			else
+				hue_incr = (360 - hue_tgt - hue_now) / (float)trans_timer;
+			debug("hue %.2f => %.2f, incr: %.4f, time: %d\n", hue_now, hue_tgt, hue_incr, trans_timer);
+		}
+		else
+		{
+			trans_timer = trans_timer < diff_ms ? 0 : trans_timer - diff_ms;
+			hue_now += hue_incr * (float)diff_ms;
+			if(hue_now > 360.0f) hue_now -= 360.0f;
+			if(hue_now < 0.0f) hue_now += 360.0f;
+		}
+
+		Color_t light_color = hsv2rgb(hue_now, 1.0f, param[show]);
+		ws2812_set_led_all(&light_color);
 	}
 	break;
 

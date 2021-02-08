@@ -6,21 +6,24 @@
 
 typedef enum
 {
-    DM_BAT, // reserved mode
+	DM_BAT, // reserved mode
 
-    DM_SPARKLE,
+	DM_SPARKLE,
 
-    DM_IDLE,
-    // modes
-    DM_RIDE0,
-    DM_RIDE_SPARKLE,
-    
-    DM_PENDULUM,
-    DM_RAINBOW_ROTATE,
+	DM_RIDE0,
+	DM_RIDE_SPARKLE,
 
-    DM_POLICE,
+	DM_IDLE,
+	// modes
 
-    DM_COUNT
+	DM_RANDOM_COLOR,
+
+	DM_PENDULUM,
+	DM_RAINBOW_ROTATE,
+
+	DM_POLICE,
+
+	DM_COUNT
 } DM_SHOW_T;
 
 void dm_init(void);

@@ -90,7 +90,7 @@ CFLAGS   += -fno-move-loop-invariants -ffreestanding
 
 CFLAGS   += -Wall -Wextra -Wstrict-prototypes  -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs
 CFLAGS   += -Wshadow -Wsign-conversion -Wstrict-overflow=5 -Wswitch-default -Wno-unused
-CFLAGS   += -pedantic -Wcast-qual -Wcast-align
+CFLAGS   += -pedantic -Wcast-qual -Wcast-align -Wdouble-promotion
 
 # CFLAGS   += -Werror
 # CFLAGS   += -Wundef 
