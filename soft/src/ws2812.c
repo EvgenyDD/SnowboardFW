@@ -7,11 +7,11 @@
 extern TIM_HandleTypeDef htim1;
 extern DMA_HandleTypeDef hdma_tim1_ch1;
 
-const Color_t black = {0, 0, 0};
-const Color_t red = {255, 0, 0};
-const Color_t green = {0, 255, 0};
-const Color_t blue = {0, 0, 255};
-const Color_t white = {255, 255, 255};
+const color_t black = {0, 0, 0};
+const color_t red = {255, 0, 0};
+const color_t green = {0, 255, 0};
+const color_t blue = {0, 0, 255};
+const color_t white = {255, 255, 255};
 
 static bool transfer_enabled = false;
 
@@ -22,7 +22,7 @@ static bool transfer_enabled = false;
 #define TIM_COMPARE_LOW 8
 
 uint16_t buffer_dma[ARRAY_LEN];
-Color_t leds[LED_COUNT];
+color_t leds[LED_COUNT];
 
 static const uint8_t gamma8[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -150,28 +150,25 @@ void ws2812_push(void)
 	uint32_t iterator = 5;
 	for(uint32_t led = 0; led < LED_COUNT; led++)
 	{
-		if(leds[led].color_r ||
-		   leds[led].color_g ||
-		   leds[led].color_b) is_on = true;
+		if(leds[led].r ||
+		   leds[led].g ||
+		   leds[led].b) is_on = true;
 
-		// b
 		for(uint32_t i = 0; i < 8; i++)
 		{
-			buffer_dma[iterator] = gamma8[leds[led].color_b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+			buffer_dma[iterator] = gamma8[leds[led].r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
 			iterator++;
 		}
 
-		// r
 		for(uint32_t i = 0; i < 8; i++)
 		{
-			buffer_dma[iterator] = gamma8[leds[led].color_g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+			buffer_dma[iterator] = gamma8[leds[led].g] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
 			iterator++;
 		}
 
-		// g
 		for(uint32_t i = 0; i < 8; i++)
 		{
-			buffer_dma[iterator] = gamma8[leds[led].color_r] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
+			buffer_dma[iterator] = gamma8[leds[led].b] & (1U << (7 - i)) ? TIM_COMPARE_HIGH : TIM_COMPARE_LOW;
 			iterator++;
 		}
 	}
@@ -251,20 +248,20 @@ void ws2812_terminate(void)
 
 void ws2812_clear(void) { memset(leds, 0, sizeof(leds)); }
 
-void ws2812_set_led(uint16_t id, const Color_t *color)
+void ws2812_set_led(uint16_t id, const color_t *color)
 {
 	if(id >= LED_COUNT) return;
 
-	memcpy(&leds[id], color, sizeof(Color_t));
+	memcpy(&leds[id], color, sizeof(color_t));
 }
 
-void ws2812_set_led_all(const Color_t *color)
+void ws2812_set_led_all(const color_t *color)
 {
 	for(uint32_t i = 0; i < LED_COUNT; i++)
-		memcpy(&leds[i], color, sizeof(Color_t));
+		memcpy(&leds[i], color, sizeof(color_t));
 }
 
-void ws2812_set_led_recursive(int16_t id, const Color_t *color)
+void ws2812_set_led_recursive(int16_t id, const color_t *color)
 {
 	while(id >= LED_COUNT)
 		id -= LED_COUNT;
@@ -272,7 +269,7 @@ void ws2812_set_led_recursive(int16_t id, const Color_t *color)
 		id += LED_COUNT;
 	if(id >= LED_COUNT) return;
 
-	memcpy(&leds[id], color, sizeof(Color_t));
+	memcpy(&leds[id], color, sizeof(color_t));
 }
 
 /**
@@ -280,10 +277,10 @@ void ws2812_set_led_recursive(int16_t id, const Color_t *color)
  * s [0;1]
  * v [0;255]
  */
-Color_t hsv2rgb(float h, float s, float v)
+color_t hsv2rgb(float h, float s, float v)
 {
 	float p, q, t, ff;
-	Color_t out;
+	color_t out;
 
 	float hh = h;
 	if(hh >= 360.0f || hh < 0) hh = 0;
@@ -297,36 +294,36 @@ Color_t hsv2rgb(float h, float s, float v)
 	switch(i)
 	{
 	case 0:
-		out.color_r = v;
-		out.color_g = t;
-		out.color_b = p;
+		out.r = v;
+		out.g = t;
+		out.b = p;
 		break;
 	case 1:
-		out.color_r = q;
-		out.color_g = v;
-		out.color_b = p;
+		out.r = q;
+		out.g = v;
+		out.b = p;
 		break;
 	case 2:
-		out.color_r = p;
-		out.color_g = v;
-		out.color_b = t;
+		out.r = p;
+		out.g = v;
+		out.b = t;
 		break;
 
 	case 3:
-		out.color_r = p;
-		out.color_g = q;
-		out.color_b = v;
+		out.r = p;
+		out.g = q;
+		out.b = v;
 		break;
 	case 4:
-		out.color_r = t;
-		out.color_g = p;
-		out.color_b = v;
+		out.r = t;
+		out.g = p;
+		out.b = v;
 		break;
 	case 5:
 	default:
-		out.color_r = v;
-		out.color_g = p;
-		out.color_b = q;
+		out.r = v;
+		out.g = p;
+		out.b = q;
 		break;
 	}
 	return out;
@@ -346,7 +343,7 @@ void ws2812_set_angle(float angle, float w, uint8_t brightness, uint8_t led_coun
 	{
 		float w_abs = fabsf(w);
 		float w_trunc = w_abs > 120.0f ? 120.0f : w_abs;
-		Color_t light_color = hsv2rgb(240 + w_trunc, 1.0f, brightness);
+		color_t light_color = hsv2rgb(240 + w_trunc, 1.0f, brightness);
 
 		for(uint32_t i = 0; i < LED_COUNT; i++)
 		{
@@ -356,4 +353,15 @@ void ws2812_set_angle(float angle, float w, uint8_t brightness, uint8_t led_coun
 		}
 		// prev_start = start;
 	}
+}
+
+color_t color_dim(const color_t *c, float dim)
+{
+	if(dim > 1.0f) dim = 1.0f;
+	if(dim < 0) dim = 0;
+	color_t out;
+	out.r = c->r * dim;
+	out.g = c->g * dim;
+	out.b = c->b * dim;
+	return out;
 }

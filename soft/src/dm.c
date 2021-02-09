@@ -41,11 +41,17 @@ void dm_switch_parameter(void)
 	{
 	default: break;
 
+	case DM_BRB:
 	case DM_RANDOM_COLOR:
 	case DM_RAINBOW_ROTATE:
 	case DM_PENDULUM:
 		*p += 30;
 		if(*p < 100 || *p > 240) *p = 100;
+		break;
+
+	case DM_STRIPPER_FIXED:
+		*p *= 1.6f;
+		if(*p < 120 || *p > 800) *p = 120;
 		break;
 
 	case DM_RIDE0:
@@ -120,7 +126,7 @@ void dm_poll(uint32_t diff_ms)
 	case DM_BAT:
 	{
 		uint32_t light = get_percent_battery() * LED_COUNT;
-		Color_t color_light = {140, 0, 0};
+		color_t color_light = {140, 0, 0};
 		for(uint32_t i = 0; i < light; i++)
 		{
 			ws2812_set_led(i, &color_light);
@@ -160,8 +166,58 @@ void dm_poll(uint32_t diff_ms)
 			if(hue_now < 0.0f) hue_now += 360.0f;
 		}
 
-		Color_t light_color = hsv2rgb(hue_now, 1.0f, param[show]);
+		color_t light_color = hsv2rgb(hue_now, 1.0f, param[show]);
 		ws2812_set_led_all(&light_color);
+	}
+	break;
+
+#define BRB_BRD_0 4
+#define BRB_BRD_1 59
+#define BRB_BRD_2 94
+#define BRB_BRD_3 149
+
+	case DM_STRIPPER_FIXED:
+	{
+		static color_t color;
+		static uint32_t timer = 0;
+		timer += diff_ms;
+		if(timer > param[show])
+		{
+			color = hsv2rgb(HAL_RNG_GetRandomNumber(&hrng) % 360, 1.0f, 240);
+			timer = 0;
+		}
+		if(timer < 0.4 * param[show])
+		{
+			for(uint32_t i = 0; i < BRB_BRD_0; i++)
+				ws2812_set_led(i, &color);
+			for(uint32_t i = BRB_BRD_1; i < BRB_BRD_2; i++)
+				ws2812_set_led(i, &color);
+			for(uint32_t i = BRB_BRD_3; i < LED_COUNT; i++)
+				ws2812_set_led(i, &color);
+		}
+		else
+		{
+			ws2812_clear();
+		}
+	}
+	break;
+
+	case DM_BRB:
+	{
+		color_t dim_r = color_dim(&red, param[show] / 255.0f);
+		color_t dim_w = color_dim(&white, param[show] / 255.0f);
+
+		for(uint32_t i = 0; i < BRB_BRD_0; i++)
+			ws2812_set_led(i, &dim_r);
+		for(uint32_t i = BRB_BRD_1; i < BRB_BRD_2; i++)
+			ws2812_set_led(i, &dim_r);
+		for(uint32_t i = BRB_BRD_3; i < LED_COUNT; i++)
+			ws2812_set_led(i, &dim_r);
+
+		for(uint32_t i = BRB_BRD_0; i < BRB_BRD_1; i++)
+			ws2812_set_led(i, &dim_w);
+		for(uint32_t i = BRB_BRD_2; i < BRB_BRD_3; i++)
+			ws2812_set_led(i, &dim_w);
 	}
 	break;
 
@@ -176,7 +232,7 @@ void dm_poll(uint32_t diff_ms)
 		{
 			int32_t hue = (int32_t)(offset_scaled + i) * 360 / LED_COUNT;
 			hue %= 360;
-			Color_t light_color = hsv2rgb(hue, 1.0f, param[show]);
+			color_t light_color = hsv2rgb(hue, 1.0f, param[show]);
 			ws2812_set_led(i, &light_color);
 		}
 	}
@@ -255,7 +311,7 @@ void dm_poll(uint32_t diff_ms)
 				{
 					phase = PHASE_RED_1;
 
-					Color_t c = {235, 0, 0};
+					color_t c = {250, 0, 0};
 					for(uint32_t i = 0; i < LED_COUNT / 2; i++)
 					{
 						ws2812_set_led_recursive(i - POLICE_OFFSET, &c);
@@ -276,7 +332,7 @@ void dm_poll(uint32_t diff_ms)
 				{
 					phase = PHASE_BLU_1;
 
-					Color_t c = {0, 0, 200};
+					color_t c = {0, 0, 220};
 					for(uint32_t i = LED_COUNT / 2; i < LED_COUNT; i++)
 					{
 						ws2812_set_led_recursive(i - POLICE_OFFSET, &c);
@@ -305,7 +361,7 @@ void dm_poll(uint32_t diff_ms)
 			{
 				is_lit = false;
 
-				Color_t c[] = {
+				color_t c[] = {
 					{230, 0, 0},
 					{230, 210, 0},
 					{0, 210, 0},
@@ -340,7 +396,7 @@ void dm_poll(uint32_t diff_ms)
 			hue += (float)diff_ms / 30.0f;
 			if(hue >= 360.0f) hue = 0;
 
-			Color_t c = hsv2rgb(hue, 1.0, param[show]);
+			color_t c = hsv2rgb(hue, 1.0, param[show]);
 
 			if(accel_filt[1] < -500)
 			{
@@ -387,7 +443,7 @@ void dm_poll(uint32_t diff_ms)
 	{
 		if(accel_filt[0] > 2000 && fabsf(accel_filt[1] < 2500) && fabsf(accel_filt[2]) < 2500)
 			dm_switch_mode_sparkle();
-		Color_t x = {100, 0, 0};
+		color_t x = {100, 0, 0};
 		ws2812_set_led(LED_COUNT / 2, &x);
 	}
 	break;

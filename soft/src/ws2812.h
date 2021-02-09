@@ -10,10 +10,10 @@
 
 typedef struct
 {
-	uint8_t color_r;
-	uint8_t color_g;
-	uint8_t color_b;
-} Color_t;
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+} color_t;
 
 void ws2812_init(void);
 void ws2812_push(void);
@@ -23,16 +23,17 @@ void ws2812_set_angle(float angle, float w, uint8_t brightness, uint8_t led_coun
 
 // API
 void ws2812_clear(void);
-void ws2812_set_led(uint16_t id, const Color_t *color);
-void ws2812_set_led_all(const Color_t *color);
-void ws2812_set_led_recursive(int16_t id, const Color_t *color);
+void ws2812_set_led(uint16_t id, const color_t *color);
+void ws2812_set_led_all(const color_t *color);
+void ws2812_set_led_recursive(int16_t id, const color_t *color);
 
-extern const Color_t black;
-extern const Color_t red;
-extern const Color_t green;
-extern const Color_t blue;
-extern const Color_t white;
+extern const color_t black;
+extern const color_t red;
+extern const color_t green;
+extern const color_t blue;
+extern const color_t white;
 
-Color_t hsv2rgb(float h, float s, float v);
+color_t hsv2rgb(float h, float s, float v);
+color_t color_dim(const color_t *c, float dim);
 
 #endif // WS2812_H
