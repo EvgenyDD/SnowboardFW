@@ -36,4 +36,6 @@ extern const color_t white;
 color_t hsv2rgb(float h, float s, float v);
 color_t color_dim(const color_t *c, float dim);
 
+void normalize_hue(float *hue);
+
 #endif // WS2812_H

@@ -62,7 +62,8 @@ void init(void)
 	HAL_PWR_EnableBkUpAccess();
 	uint32_t data = HAL_RTCEx_BKUPRead(&hrtc, 0);
 	debug("BKUP reg #0: %d\n", data);
-	if(data != 42)
+#define SYNC_VAR 2
+	if(data != SYNC_VAR)
 	{
 		RTC_TimeTypeDef sTime = {0};
 		RTC_DateTypeDef sDate = {0};
@@ -71,19 +72,18 @@ void init(void)
 		sTime.StoreOperation = RTC_STOREOPERATION_RESET;
 		sDate.Year = 20;
 		sDate.Month = RTC_MONTH_FEBRUARY;
-		sDate.Date = 6;
+		sDate.Date = 12;
 		sDate.WeekDay = RTC_WEEKDAY_SATURDAY;
-		sTime.Hours = 021;
-		sTime.Minutes = 25;
+		sTime.Hours = 0;
+		sTime.Minutes = 10;
 		sTime.Seconds = 0;
 		HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-
 		HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 	}
 
 	HAL_IWDG_Refresh(&hiwdg);
 
-	HAL_RTCEx_BKUPWrite(&hrtc, 0, 42);
+	HAL_RTCEx_BKUPWrite(&hrtc, 0, SYNC_VAR);
 	HAL_PWR_DisableBkUpAccess();
 }
 
@@ -128,10 +128,11 @@ void loop(void)
 		if(led0_cnt > 500) led0_cnt = 0;
 
 		bool lit = logging_enabled ? led0_cnt > 80 : led0_cnt > 480;
-		LED3_GPIO_Port->ODR ^= (-lit ^ LED3_GPIO_Port->ODR) & LED3_Pin;
+		LED3_GPIO_Port->BSRR = LED3_Pin << (lit ? 0 : 16);
 
 		bool litb = get_percent_battery() < 0.3 ? led0_cnt > 400 : 0;
-		LED0_GPIO_Port->ODR ^= (-litb ^ LED0_GPIO_Port->ODR) & LED0_Pin;
+		if(adc_get_v_bat() < 8.0) litb = true;
+		LED0_GPIO_Port->BSRR = LED0_Pin << (litb ? 0 : 16);
 	}
 
 	if(diff_ms > 0)
@@ -168,6 +169,13 @@ void loop(void)
 	debounce_cb(&btn[3], !(BTN3_GPIO_Port->IDR & BTN3_Pin), diff_ms);
 
 	static bool must_turn_off = false;
+
+	if(adc_get_v_bat() < 7.0f)
+	{
+		debug("[!] OFF, Vbat: %.3f V\n", adc_get_v_bat());
+		PWR_EN_GPIO_Port->ODR &= (uint32_t)(~PWR_EN_Pin);
+	}
+
 	// button processor
 	{
 		static bool shift_selection = false;

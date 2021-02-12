@@ -44,6 +44,7 @@ void dm_switch_parameter(void)
 	case DM_BRB:
 	case DM_RANDOM_COLOR:
 	case DM_RAINBOW_ROTATE:
+	case DM_ROTATING_STRIPES:
 	case DM_PENDULUM:
 		*p += 30;
 		if(*p < 100 || *p > 240) *p = 100;
@@ -168,6 +169,46 @@ void dm_poll(uint32_t diff_ms)
 
 		color_t light_color = hsv2rgb(hue_now, 1.0f, param[show]);
 		ws2812_set_led_all(&light_color);
+	}
+	break;
+
+	case DM_ROTATING_STRIPES:
+	{
+#define LED_PER_STRIPE 8
+#define NUM_STRIPES LED_COUNT / LED_PER_STRIPE /* per stripe */
+		static struct
+		{
+			float hue;
+			float hue_vel;
+			uint32_t change_to;
+		} stripe[NUM_STRIPES / 2] = {0};
+
+		static float offset = 0;
+		offset += 0.003f * (float)diff_ms;
+		if(offset >= LED_COUNT) offset -= LED_COUNT;
+		ws2812_clear();
+		for(uint32_t i = 0; i < sizeof(stripe) / sizeof(stripe[0]); i++)
+		{
+			if(stripe[i].change_to < diff_ms)
+			{
+				stripe[i].change_to = 1000 + (HAL_RNG_GetRandomNumber(&hrng) % 4000);
+				stripe[i].hue_vel = 0.001 + (float)(HAL_RNG_GetRandomNumber(&hrng) % 100) * 0.00025f;
+				stripe[i].hue_vel *= (HAL_RNG_GetRandomNumber(&hrng) % 2) ? 1.0f : -1.0f;
+			}
+			else
+			{
+				stripe[i].change_to -= diff_ms;
+			}
+			stripe[i].hue += stripe[i].hue_vel * diff_ms;
+			normalize_hue(&stripe[i].hue);
+			color_t light_color;
+			for(int o = 0; o < LED_PER_STRIPE + 1; o++)
+			{
+				float br = sin((ceil(offset) - offset + o) / 3.14159256f);
+				light_color = hsv2rgb(stripe[i].hue, 1.0f, br * param[show]);
+				ws2812_set_led_recursive(LED_COUNT - (offset + i * 2 * LED_PER_STRIPE + o), &light_color);
+			}
+		}
 	}
 	break;
 

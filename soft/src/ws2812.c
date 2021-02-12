@@ -263,11 +263,8 @@ void ws2812_set_led_all(const color_t *color)
 
 void ws2812_set_led_recursive(int16_t id, const color_t *color)
 {
-	while(id >= LED_COUNT)
-		id -= LED_COUNT;
-	while(id < 0)
-		id += LED_COUNT;
-	if(id >= LED_COUNT) return;
+	id %= LED_COUNT;
+	if(id < 0) id += LED_COUNT;
 
 	memcpy(&leds[id], color, sizeof(color_t));
 }
@@ -364,4 +361,10 @@ color_t color_dim(const color_t *c, float dim)
 	out.g = c->g * dim;
 	out.b = c->b * dim;
 	return out;
+}
+
+void normalize_hue(float *hue)
+{
+	*hue = fmodf(*hue, 360.0f);
+	if(*hue < 0) *hue += 360.0f;
 }
