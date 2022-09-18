@@ -291,32 +291,6 @@ void dm_poll(uint32_t diff_ms)
 		phys_engine_poll(ts, angle);
 
 		ws2812_set_angle(phys_engine_get_angle(), phys_engine_get_w() * 20.0f, param[show], 25 /* led count */);
-
-		// static float color_ring = 0;
-
-		// static uint32_t ptr = 0;
-		// static uint32_t cnt = 0;
-		// if(cnt < HAL_GetTick())
-		// {
-		//     cnt = HAL_GetTick() + 5;
-
-		//     color_ring += 0.2;
-		//     if(color_ring >= 360) color_ring = 0;
-
-		//     if(ptr >= LED_COUNT)
-		//     {
-		//         ptr = 0;
-		//     }
-		//     // ws2812_clear();
-
-		//     // int rnd = rand() % 4;
-		//     // ws2812_set_led(ptr, rnd == 0 ? red : rnd == 1 ? green : rnd == 2 ? blue : white);
-		//     ws2812_set_led(ptr, hsv2rgb(color_ring, 1.0, 255.0));
-		//     // ws2812_set_led(ptr, HSVtoRGB(color_ring));
-		//     ws2812_set_led(ptr >= 10 ? ptr - 10 : 160 - 10 + ptr, black);
-
-		//     ptr++;
-		// }
 	}
 	break;
 
