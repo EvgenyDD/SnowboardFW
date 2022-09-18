@@ -26,3 +26,5 @@ ui/Makefile
 logs
 *.ini
 soft/build/*
+build/*
+*.htm
